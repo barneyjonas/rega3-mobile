@@ -26,7 +26,19 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single",
+      "name": "rega3",
+      "shortName": "rega3",
+      "description": "rega3 messaging app",
+      "lang": "en",
+      "themeColor": "#111111",
+      "backgroundColor": "#111111",
+      "display": "standalone",
+      "orientation": "portrait",
+      "scope": "/",
+      "startUrl": "/"
     },
     "extra": {
       "eas": {
