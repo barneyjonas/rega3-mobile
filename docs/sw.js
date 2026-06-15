@@ -1,10 +1,10 @@
-const CACHE = 'rega3-v1';
+const CACHE = 'rega3-v2';
 
 const BASE = '/rega3-mobile';
 
+// index.html is intentionally excluded — it changes with every build
+// (new bundle hash) and must always be fetched fresh from the network.
 const APP_SHELL = [
-  BASE + '/',
-  BASE + '/index.html',
   BASE + '/manifest.json',
   BASE + '/icons/icon-192.png',
   BASE + '/icons/icon-512.png',
