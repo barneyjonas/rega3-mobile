@@ -2,15 +2,12 @@ import React, { useState, useEffect, Component } from 'react'
 import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { LoginScreen } from './src/screens/LoginScreen'
-import { Sidebar } from './src/screens/Sidebar'
-import { ChatPanel } from './src/screens/ChatPanel'
+import { ConversationListScreen } from './src/screens/ConversationListScreen'
+import { ChatScreen } from './src/screens/ChatScreen'
+import { NewChatScreen } from './src/screens/NewChatScreen'
 import { useAuthStore } from './src/store/auth'
-import { useMessagesStore } from './src/store/messages'
-import { useConversationsStore } from './src/store/conversations'
 import { realtime } from './src/api'
-import { MOCK_CONVERSATIONS, MOCK_MESSAGES } from './src/data/mockData'
 import type { Conversation } from './src/types/conversation'
-import type { AppTab } from './src/types/navigation'
 
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: string | null }> {
   state = { error: null }
@@ -34,20 +31,18 @@ const eb = StyleSheet.create({
   m: { color: '#ccc', fontSize: 12, fontFamily: 'monospace' },
 })
 
+type Screen =
+  | { name: 'list' }
+  | { name: 'chat'; conversation: Conversation }
+  | { name: 'new-chat' }
+
 function AppInner() {
   const user = useAuthStore((s) => s.user)
-  const [activeTab, setActiveTab] = useState<AppTab>('chats')
-  const [activeConv, setActiveConv] = useState<Conversation | null>(null)
-  const { setMessages } = useMessagesStore()
-  const { setConversations } = useConversationsStore()
-
-  useEffect(() => {
-    setConversations(MOCK_CONVERSATIONS)
-    Object.entries(MOCK_MESSAGES).forEach(([convId, msgs]) => setMessages(convId, msgs))
-  }, [])
+  const [screen, setScreen] = useState<Screen>({ name: 'list' })
 
   useEffect(() => {
     if (user) realtime.connect(user.id)
+    else realtime.disconnect()
   }, [user?.id])
 
   if (!user) {
@@ -59,38 +54,27 @@ function AppInner() {
     )
   }
 
-  const renderMain = () => {
-    if (activeTab === 'calls') {
-      return (
-        <View style={placeholder.root}>
-          <Text style={placeholder.icon}>📞</Text>
-          <Text style={placeholder.title}>שיחות — בקרוב</Text>
-        </View>
-      )
-    }
-    if (activeTab === 'settings') {
-      return (
-        <View style={placeholder.root}>
-          <Text style={placeholder.icon}>⚙️</Text>
-          <Text style={placeholder.title}>הגדרות — בקרוב</Text>
-        </View>
-      )
-    }
-    return <ChatPanel conversation={activeConv} />
-  }
-
   return (
     <>
       <StatusBar style="light" />
-      <View style={styles.root}>
-        <View style={styles.main}>{renderMain()}</View>
-        <Sidebar
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          activeConvId={activeConv?.id ?? null}
-          onSelectConv={(conv) => { setActiveConv(conv); setActiveTab('chats') }}
+      {screen.name === 'list' && (
+        <ConversationListScreen
+          onSelect={(conv) => setScreen({ name: 'chat', conversation: conv })}
+          onNewChat={() => setScreen({ name: 'new-chat' })}
         />
-      </View>
+      )}
+      {screen.name === 'chat' && (
+        <ChatScreen
+          conversation={(screen as Extract<Screen, { name: 'chat' }>).conversation}
+          onBack={() => setScreen({ name: 'list' })}
+        />
+      )}
+      {screen.name === 'new-chat' && (
+        <NewChatScreen
+          onSelect={(conv) => setScreen({ name: 'chat', conversation: conv })}
+          onBack={() => setScreen({ name: 'list' })}
+        />
+      )}
     </>
   )
 }
@@ -102,14 +86,3 @@ export default function App() {
     </ErrorBoundary>
   )
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, flexDirection: 'row', backgroundColor: '#0d1117' },
-  main: { flex: 1 },
-})
-
-const placeholder = StyleSheet.create({
-  root: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d1117', gap: 12 },
-  icon: { fontSize: 48 },
-  title: { fontSize: 18, color: '#374151', fontWeight: '600' },
-})
