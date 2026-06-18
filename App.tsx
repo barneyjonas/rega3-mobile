@@ -4,9 +4,16 @@ import { StatusBar } from 'expo-status-bar'
 import { LoginScreen } from './src/screens/LoginScreen'
 import { Sidebar } from './src/screens/Sidebar'
 import { ChatPanel } from './src/screens/ChatPanel'
+import { CallsPanel } from './src/screens/CallsPanel'
+import { SettingsPanel } from './src/screens/SettingsPanel'
 import { useAuthStore } from './src/store/auth'
+import { useMessagesStore } from './src/store/messages'
+import { useConversationsStore } from './src/store/conversations'
 import { realtime } from './src/api'
+import { MOCK_CONVERSATIONS, MOCK_MESSAGES } from './src/data/mockData'
 import type { Conversation } from './src/types/conversation'
+
+export type AppTab = 'chats' | 'calls' | 'settings'
 
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: string | null }> {
   state = { error: null }
@@ -14,9 +21,9 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: st
   render() {
     if (this.state.error) {
       return (
-        <View style={eb.container}>
-          <Text style={eb.title}>App crashed</Text>
-          <ScrollView><Text style={eb.msg}>{this.state.error}</Text></ScrollView>
+        <View style={eb.c}>
+          <Text style={eb.t}>שגיאה</Text>
+          <ScrollView><Text style={eb.m}>{this.state.error}</Text></ScrollView>
         </View>
       )
     }
@@ -25,14 +32,23 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: st
 }
 
 const eb = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000', padding: 20, paddingTop: 60 },
-  title: { color: '#f87171', fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  msg: { color: '#ccc', fontSize: 12, fontFamily: 'monospace' },
+  c: { flex: 1, backgroundColor: '#000', padding: 20, paddingTop: 60 },
+  t: { color: '#f87171', fontSize: 18, fontWeight: '700', marginBottom: 12 },
+  m: { color: '#ccc', fontSize: 12, fontFamily: 'monospace' },
 })
 
 function AppInner() {
   const user = useAuthStore((s) => s.user)
+  const [activeTab, setActiveTab] = useState<AppTab>('chats')
   const [activeConv, setActiveConv] = useState<Conversation | null>(null)
+  const { setMessages } = useMessagesStore()
+  const { setConversations } = useConversationsStore()
+
+  // Seed mock data
+  useEffect(() => {
+    setConversations(MOCK_CONVERSATIONS)
+    Object.entries(MOCK_MESSAGES).forEach(([convId, msgs]) => setMessages(convId, msgs))
+  }, [])
 
   useEffect(() => {
     if (user) realtime.connect(user.id)
@@ -47,12 +63,26 @@ function AppInner() {
     )
   }
 
+  const renderMain = () => {
+    if (activeTab === 'calls') return <CallsPanel />
+    if (activeTab === 'settings') return <SettingsPanel />
+    return <ChatPanel conversation={activeConv} />
+  }
+
   return (
     <>
       <StatusBar style="light" />
+      {/* RTL: main content left, sidebar right */}
       <View style={styles.root}>
-        <Sidebar activeConvId={activeConv?.id ?? null} onSelect={setActiveConv} />
-        <ChatPanel conversation={activeConv} />
+        <View style={styles.main}>
+          {renderMain()}
+        </View>
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          activeConvId={activeConv?.id ?? null}
+          onSelectConv={(conv) => { setActiveConv(conv); setActiveTab('chats') }}
+        />
       </View>
     </>
   )
@@ -67,9 +97,6 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: '#0f1117',
-  },
+  root: { flex: 1, flexDirection: 'row', backgroundColor: '#0d1117' },
+  main: { flex: 1 },
 })

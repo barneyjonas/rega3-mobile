@@ -53,7 +53,8 @@ function ActiveChat({ conversation }: { conversation: Conversation }) {
   const inputRef = useRef<TextInput>(null)
 
   useEffect(() => {
-    if (!user || messages.length > 0) return
+    const isMock = conversation.id.startsWith('mock-')
+    if (!user || messages.length > 0 || isMock) return
     api.getMessages(conversation.id)
       .then(({ messages: msgs }) => setMessages(conversation.id, msgs.map((m) => apiMsgToMessage(m, user.id))))
       .catch(() => {})
@@ -117,15 +118,17 @@ function ActiveChat({ conversation }: { conversation: Conversation }) {
     }
     addMessage(conversation.id, msg)
     updateConversation(conversation.id, { last_message: trimmed, last_message_time: msg.timestamp, unread_count: 0 })
-    realtime.send({
-      type: 'send_message',
-      id: msgId,
-      conversation_id: conversation.id,
-      sender_id: user.id,
-      msg_type: 'text',
-      text: trimmed,
-      timestamp: msg.timestamp,
-    })
+    if (!conversation.id.startsWith('mock-')) {
+      realtime.send({
+        type: 'send_message',
+        id: msgId,
+        conversation_id: conversation.id,
+        sender_id: user.id,
+        msg_type: 'text',
+        text: trimmed,
+        timestamp: msg.timestamp,
+      })
+    }
     setText('')
   }, [text, user, conversation.id, addMessage, updateConversation])
 
