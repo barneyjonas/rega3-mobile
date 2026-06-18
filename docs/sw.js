@@ -1,4 +1,4 @@
-const CACHE = 'rega3-v4';
+const CACHE = 'rega3-v1';
 
 const BASE = '/rega3-mobile';
 
