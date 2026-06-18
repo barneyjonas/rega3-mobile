@@ -10,7 +10,7 @@ import { api, realtime } from '../api'
 import type { ApiMessage, ApiUser } from '../api'
 import type { Conversation } from '../types/conversation'
 import type { Message } from '../types/message'
-import type { AppTab } from '../../App'
+import type { AppTab } from '../types/navigation'
 import { formatTime } from '../utils/time'
 
 interface Props {

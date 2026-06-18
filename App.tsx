@@ -13,7 +13,7 @@ import { realtime } from './src/api'
 import { MOCK_CONVERSATIONS, MOCK_MESSAGES } from './src/data/mockData'
 import type { Conversation } from './src/types/conversation'
 
-export type AppTab = 'chats' | 'calls' | 'settings'
+import type { AppTab } from './src/types/navigation'
 
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: string | null }> {
   state = { error: null }
