@@ -172,9 +172,11 @@ export function Sidebar({ activeConvId, onSelect }: Props) {
         <ActivityIndicator color="#1d4ed8" style={{ marginTop: 32 }} />
       ) : (
         <FlatList
-          data={conversations.filter((c) =>
-            !query || c.contact_name.toLowerCase().includes(query.toLowerCase())
-          )}
+          data={conversations
+            .filter((c) => !query || c.contact_name.toLowerCase().includes(query.toLowerCase()))
+            .slice()
+            .sort((a, b) => (b.last_message_time ?? 0) - (a.last_message_time ?? 0))
+          }
           keyExtractor={(c) => c.id}
           renderItem={({ item }) => (
             <TouchableOpacity

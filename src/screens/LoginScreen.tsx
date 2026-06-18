@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  SafeAreaView, ActivityIndicator, KeyboardAvoidingView, Platform,
+  ActivityIndicator,
 } from 'react-native'
 import { api } from '../api'
 import { useAuthStore } from '../store/auth'
@@ -35,87 +35,128 @@ export function LoginScreen({ onLoggedIn }: Props) {
     }
   }
 
+  const handleKeyPress = (e: any) => {
+    if (e.nativeEvent.key === 'Enter') handleLogin()
+  }
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <View style={styles.container}>
-          <Text style={styles.title}>rega3</Text>
-          <Text style={styles.sub}>הכנס שם כדי להתחיל</Text>
+    <View style={styles.root}>
+      <View style={styles.card}>
+        <View style={styles.logo}>
+          <Text style={styles.logoText}>ר</Text>
+        </View>
+        <Text style={styles.title}>rega</Text>
+        <Text style={styles.sub}>הצ'אט שלנו</Text>
 
-          <TextInput
-            style={styles.input}
-            placeholder="שם תצוגה (למשל: יואב)"
-            placeholderTextColor="#555"
-            value={displayName}
-            onChangeText={setDisplayName}
-            textAlign="right"
-            autoCapitalize="words"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="שם משתמש (למשל: yoav)"
-            placeholderTextColor="#555"
-            value={username}
-            onChangeText={setUsername}
-            textAlign="right"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
+        <View style={styles.form}>
+          <View style={styles.field}>
+            <Text style={styles.label}>שם תצוגה</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="למשל: יואב"
+              placeholderTextColor="#4b5563"
+              value={displayName}
+              onChangeText={setDisplayName}
+              textAlign="right"
+              autoCapitalize="words"
+              onKeyPress={handleKeyPress}
+            />
+          </View>
+          <View style={styles.field}>
+            <Text style={styles.label}>שם משתמש</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="למשל: yoav"
+              placeholderTextColor="#4b5563"
+              value={username}
+              onChangeText={setUsername}
+              textAlign="right"
+              autoCapitalize="none"
+              autoCorrect={false}
+              onKeyPress={handleKeyPress}
+            />
+          </View>
 
-          {!!error && <Text style={styles.error}>{error}</Text>}
+          {!!error && (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
 
           <TouchableOpacity style={styles.btn} onPress={handleLogin} disabled={loading}>
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.btnText}>כניסה</Text>
-            )}
+            {loading
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.btnText}>כניסה / הרשמה</Text>
+            }
           </TouchableOpacity>
 
           <Text style={styles.hint}>
-            אם יש לך כבר חשבון עם שם המשתמש הזה, תיכנס אוטומטית.
+            אם שם המשתמש כבר קיים, תיכנס לחשבון הקיים.
           </Text>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      </View>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#111' },
-  flex: { flex: 1 },
-  container: {
+  root: {
     flex: 1,
+    backgroundColor: '#0f1117',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 28,
-    gap: 14,
   },
-  title: { fontSize: 48, fontWeight: '900', color: '#1d4ed8', letterSpacing: -1 },
-  sub: { fontSize: 16, color: '#888', marginBottom: 8 },
-  input: {
-    width: '100%',
-    backgroundColor: '#1e1e1e',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: '#fff',
-    fontSize: 16,
+  card: {
+    width: 360,
+    backgroundColor: '#111827',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: '#1f2937',
+    padding: 36,
+    alignItems: 'center',
+    gap: 6,
   },
-  error: { color: '#f87171', fontSize: 14 },
-  btn: {
-    width: '100%',
+  logo: {
+    width: 60,
+    height: 60,
+    borderRadius: 18,
     backgroundColor: '#1d4ed8',
-    borderRadius: 12,
-    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  logoText: { fontSize: 32, fontWeight: '900', color: '#fff' },
+  title: { fontSize: 28, fontWeight: '900', color: '#f3f4f6', letterSpacing: -0.5 },
+  sub: { fontSize: 15, color: '#4b5563', marginBottom: 16 },
+  form: { width: '100%', gap: 12 },
+  field: { gap: 6 },
+  label: { fontSize: 13, fontWeight: '600', color: '#6b7280', textAlign: 'right' },
+  input: {
+    backgroundColor: '#1f2937',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: '#e5e7eb',
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: '#374151',
+  },
+  errorBox: {
+    backgroundColor: 'rgba(239,68,68,0.1)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.3)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  errorText: { color: '#f87171', fontSize: 13, textAlign: 'center' },
+  btn: {
+    backgroundColor: '#1d4ed8',
+    borderRadius: 10,
+    paddingVertical: 14,
     alignItems: 'center',
     marginTop: 4,
   },
-  btnText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  hint: { fontSize: 12, color: '#444', textAlign: 'center', marginTop: 8 },
+  btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  hint: { fontSize: 12, color: '#374151', textAlign: 'center', marginTop: 4 },
 })
