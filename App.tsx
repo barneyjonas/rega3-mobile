@@ -4,15 +4,12 @@ import { StatusBar } from 'expo-status-bar'
 import { LoginScreen } from './src/screens/LoginScreen'
 import { Sidebar } from './src/screens/Sidebar'
 import { ChatPanel } from './src/screens/ChatPanel'
-import { CallsPanel } from './src/screens/CallsPanel'
-import { SettingsPanel } from './src/screens/SettingsPanel'
 import { useAuthStore } from './src/store/auth'
 import { useMessagesStore } from './src/store/messages'
 import { useConversationsStore } from './src/store/conversations'
 import { realtime } from './src/api'
 import { MOCK_CONVERSATIONS, MOCK_MESSAGES } from './src/data/mockData'
 import type { Conversation } from './src/types/conversation'
-
 import type { AppTab } from './src/types/navigation'
 
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: string | null }> {
@@ -44,7 +41,6 @@ function AppInner() {
   const { setMessages } = useMessagesStore()
   const { setConversations } = useConversationsStore()
 
-  // Seed mock data
   useEffect(() => {
     setConversations(MOCK_CONVERSATIONS)
     Object.entries(MOCK_MESSAGES).forEach(([convId, msgs]) => setMessages(convId, msgs))
@@ -64,19 +60,30 @@ function AppInner() {
   }
 
   const renderMain = () => {
-    if (activeTab === 'calls') return <CallsPanel />
-    if (activeTab === 'settings') return <SettingsPanel />
+    if (activeTab === 'calls') {
+      return (
+        <View style={placeholder.root}>
+          <Text style={placeholder.icon}>📞</Text>
+          <Text style={placeholder.title}>שיחות — בקרוב</Text>
+        </View>
+      )
+    }
+    if (activeTab === 'settings') {
+      return (
+        <View style={placeholder.root}>
+          <Text style={placeholder.icon}>⚙️</Text>
+          <Text style={placeholder.title}>הגדרות — בקרוב</Text>
+        </View>
+      )
+    }
     return <ChatPanel conversation={activeConv} />
   }
 
   return (
     <>
       <StatusBar style="light" />
-      {/* RTL: main content left, sidebar right */}
       <View style={styles.root}>
-        <View style={styles.main}>
-          {renderMain()}
-        </View>
+        <View style={styles.main}>{renderMain()}</View>
         <Sidebar
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -99,4 +106,10 @@ export default function App() {
 const styles = StyleSheet.create({
   root: { flex: 1, flexDirection: 'row', backgroundColor: '#0d1117' },
   main: { flex: 1 },
+})
+
+const placeholder = StyleSheet.create({
+  root: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d1117', gap: 12 },
+  icon: { fontSize: 48 },
+  title: { fontSize: 18, color: '#374151', fontWeight: '600' },
 })
