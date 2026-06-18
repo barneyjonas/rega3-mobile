@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { ApiUser } from '../api'
 
@@ -8,6 +9,10 @@ interface AuthState {
   setUser: (user: ApiUser) => void
   logout: () => void
 }
+
+const storage = Platform.OS === 'web'
+  ? createJSONStorage(() => localStorage)
+  : createJSONStorage(() => AsyncStorage)
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -18,7 +23,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage,
     }
   )
 )
