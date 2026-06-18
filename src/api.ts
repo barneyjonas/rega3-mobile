@@ -35,12 +35,7 @@ export interface ApiMessage {
   id: string
   conversation_id: string
   sender_id: string
-  type: 'text' | 'voice'
   text: string
-  voice_uri: string | null
-  voice_duration: number | null
-  voice_waveform: number[] | null
-  voice_segments: unknown[] | null
   timestamp: number
   status: string
 }
@@ -82,9 +77,11 @@ class RealtimeClient {
   private userId: string | null = null
   private listeners = new Set<WsListener>()
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private reconnectAttempt = 0
 
   connect(userId: string) {
     this.userId = userId
+    this.reconnectAttempt = 0
     this._open()
   }
 
@@ -96,6 +93,7 @@ class RealtimeClient {
     this.ws = new WebSocket(WS_URL)
 
     this.ws.onopen = () => {
+      this.reconnectAttempt = 0
       this.ws!.send(JSON.stringify({ type: 'identify', userId: this.userId }))
     }
 
@@ -107,9 +105,10 @@ class RealtimeClient {
     }
 
     this.ws.onclose = () => {
-      // Auto-reconnect after 3s
+      const delay = Math.min(30000, 1000 * Math.pow(2, this.reconnectAttempt))
+      this.reconnectAttempt++
       if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
-      this.reconnectTimer = setTimeout(() => this._open(), 3000)
+      this.reconnectTimer = setTimeout(() => this._open(), delay)
     }
   }
 

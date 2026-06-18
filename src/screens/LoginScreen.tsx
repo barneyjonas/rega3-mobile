@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   SafeAreaView, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native'
-import { api, realtime } from '../api'
+import { api } from '../api'
 import { useAuthStore } from '../store/auth'
 
 interface Props {
@@ -27,7 +27,6 @@ export function LoginScreen({ onLoggedIn }: Props) {
     try {
       const { user } = await api.register(uname, name)
       setUser(user)
-      realtime.connect(user.id)
       onLoggedIn()
     } catch {
       setError('לא ניתן להתחבר לשרת. נסה שוב.')

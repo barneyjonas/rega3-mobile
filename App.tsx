@@ -1,4 +1,4 @@
-import React, { useState, Component } from 'react'
+import React, { useState, useEffect, Component } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { LoginScreen } from './src/screens/LoginScreen'
@@ -6,6 +6,7 @@ import { ConversationListScreen } from './src/screens/ConversationListScreen'
 import { ChatScreen } from './src/screens/ChatScreen'
 import { NewChatScreen } from './src/screens/NewChatScreen'
 import { useAuthStore } from './src/store/auth'
+import { realtime } from './src/api'
 import type { Conversation } from './src/types/conversation'
 
 type Screen = 'list' | 'chat' | 'newchat'
@@ -38,6 +39,10 @@ function AppInner() {
   const user = useAuthStore((s) => s.user)
   const [screen, setScreen] = useState<Screen>('list')
   const [activeConv, setActiveConv] = useState<Conversation | null>(null)
+
+  useEffect(() => {
+    if (user) realtime.connect(user.id)
+  }, [user?.id])
 
   if (!user) {
     return (

@@ -25,10 +25,6 @@ function apiMsgToMessage(m: ApiMessage, myId: string): Message {
     sender: m.sender_id === myId ? 'me' : 'them',
     timestamp: m.timestamp,
     status: m.status as Message['status'],
-    type: m.type,
-    voiceUri: m.voice_uri ?? undefined,
-    voiceDuration: m.voice_duration ?? undefined,
-    voiceWaveform: m.voice_waveform ?? undefined,
   }
 }
 
@@ -75,7 +71,7 @@ export function ConversationListScreen({ onSelect, onNewChat }: Props) {
           const lastMsg = c.last_message
           const conv = makeConversation(
             c.id, other,
-            lastMsg ? (lastMsg.type === 'voice' ? '🎤 הודעה קולית' : lastMsg.text) : '',
+            lastMsg ? lastMsg.text : '',
             lastMsg?.timestamp,
           )
           mapped.push(conv)
@@ -99,16 +95,13 @@ export function ConversationListScreen({ onSelect, onNewChat }: Props) {
         const message = apiMsgToMessage(m, user.id)
         addMessage(m.conversation_id, message)
         updateConversation(m.conversation_id, {
-          last_message: m.type === 'voice' ? '🎤 הודעה קולית' : m.text,
+          last_message: m.text,
           last_message_time: m.timestamp,
           unread_count: (conversations.find((c) => c.id === m.conversation_id)?.unread_count ?? 0) + 1,
         })
       }
-      if (msg.type === 'message_saved' || msg.type === 'status_update') {
-        // handled by ChatScreen
-      }
     })
-    return off
+    return () => { off() }
   }, [user, conversations])
 
   return (

@@ -1,7 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import type { Message } from '../types/message'
-import { VoiceMessageBubble } from './VoiceMessageBubble'
 import { formatTime } from '../utils/time'
 
 const STATUS_ICON: Record<string, string> = {
@@ -16,31 +15,21 @@ export function MessageBubble({ message }: { message: Message }) {
 
   return (
     <View style={[styles.row, isOwn ? styles.rowOwn : styles.rowOther]}>
-      {message.type === 'voice' && message.voiceUri ? (
-        <VoiceMessageBubble
-          uri={message.voiceUri}
-          duration={message.voiceDuration ?? 0}
-          waveform={message.voiceWaveform}
-          segments={message.voiceSegments}
-          isOwn={isOwn}
-        />
-      ) : (
-        <View style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
-          <Text style={[styles.text, isOwn ? styles.textOwn : styles.textOther]}>
-            {message.text}
+      <View style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
+        <Text style={[styles.text, isOwn ? styles.textOwn : styles.textOther]}>
+          {message.text}
+        </Text>
+        <View style={styles.meta}>
+          <Text style={[styles.time, isOwn ? styles.timeOwn : styles.timeOther]}>
+            {formatTime(message.timestamp)}
           </Text>
-          <View style={styles.meta}>
-            <Text style={[styles.time, isOwn ? styles.timeOwn : styles.timeOther]}>
-              {formatTime(message.timestamp)}
+          {isOwn && (
+            <Text style={[styles.status, message.status === 'read' ? styles.statusRead : styles.statusNormal]}>
+              {STATUS_ICON[message.status] ?? ''}
             </Text>
-            {isOwn && (
-              <Text style={[styles.status, message.status === 'read' ? styles.statusRead : styles.statusNormal]}>
-                {STATUS_ICON[message.status] ?? ''}
-              </Text>
-            )}
-          </View>
+          )}
         </View>
-      )}
+      </View>
     </View>
   )
 }

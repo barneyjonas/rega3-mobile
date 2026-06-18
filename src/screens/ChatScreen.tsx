@@ -11,9 +11,8 @@ import { useDebounce } from '../hooks/useDebounce'
 import { MessageBubble } from '../components/MessageBubble'
 import { PendingBubble } from '../components/PendingBubble'
 import { DebouncePill } from '../components/DebouncePill'
-import { VoiceRecorder } from '../components/VoiceRecorder'
 import type { Conversation } from '../types/conversation'
-import type { Message, VoiceMessage } from '../types/message'
+import type { Message } from '../types/message'
 import type { ApiMessage } from '../api'
 import { formatDateSeparator } from '../utils/time'
 
@@ -30,10 +29,6 @@ function apiMsgToMessage(m: ApiMessage, myId: string): Message {
     sender: m.sender_id === myId ? 'me' : 'them',
     timestamp: m.timestamp,
     status: m.status as Message['status'],
-    type: m.type,
-    voiceUri: m.voice_uri ?? undefined,
-    voiceDuration: m.voice_duration ?? undefined,
-    voiceWaveform: m.voice_waveform ?? undefined,
   }
 }
 
@@ -50,7 +45,6 @@ export function ChatScreen({ conversation, onBack }: Props) {
 
   const DEBOUNCE_MS = 30000
 
-  // Load message history if not already loaded
   useEffect(() => {
     if (!user || messages.length > 0) return
     api.getMessages(conversation.id).then(({ messages: msgs }) => {
@@ -58,14 +52,12 @@ export function ChatScreen({ conversation, onBack }: Props) {
     }).catch(() => {})
   }, [conversation.id, user])
 
-  // Mark as read when entering the chat
   useEffect(() => {
     if (!user) return
     realtime.send({ type: 'mark_read', conversation_id: conversation.id })
     updateConversation(conversation.id, { unread_count: 0 })
   }, [conversation.id, user])
 
-  // Listen for real-time events for this conversation
   useEffect(() => {
     if (!user) return
     const off = realtime.on((msg) => {
@@ -81,7 +73,6 @@ export function ChatScreen({ conversation, onBack }: Props) {
       if (msg.type === 'messages_read') {
         const { conversation_id } = msg as { conversation_id: string }
         if (conversation_id !== conversation.id) return
-        // Mark all our sent messages as read
         const msgs = useMessagesStore.getState().messages[conversation.id] ?? []
         msgs.forEach((m) => {
           if (m.sender === 'me' && m.status !== 'read') {
@@ -90,7 +81,7 @@ export function ChatScreen({ conversation, onBack }: Props) {
         })
       }
     })
-    return off
+    return () => { off() }
   }, [conversation.id, user])
 
   useEffect(() => {
@@ -102,10 +93,6 @@ export function ChatScreen({ conversation, onBack }: Props) {
     queueMessage(text.trim())
     setText('')
   }, [text, queueMessage])
-
-  const handleVoice = useCallback((vm: VoiceMessage) => {
-    queueMessage('', 'voice', vm)
-  }, [queueMessage])
 
   type Item =
     | { kind: 'date'; key: string; label: string }
@@ -154,7 +141,6 @@ export function ChatScreen({ conversation, onBack }: Props) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onBack} style={styles.backBtn}>
             <Text style={styles.backArrow}>‹</Text>
@@ -170,7 +156,6 @@ export function ChatScreen({ conversation, onBack }: Props) {
           </View>
         </View>
 
-        {/* Debounce pill */}
         {endTime !== null && (
           <DebouncePill
             endTime={endTime}
@@ -180,7 +165,6 @@ export function ChatScreen({ conversation, onBack }: Props) {
           />
         )}
 
-        {/* Messages */}
         <FlatList
           ref={listRef}
           data={items}
@@ -191,7 +175,6 @@ export function ChatScreen({ conversation, onBack }: Props) {
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
         />
 
-        {/* Input */}
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}
@@ -202,13 +185,9 @@ export function ChatScreen({ conversation, onBack }: Props) {
             multiline
             textAlign="right"
           />
-          {text.trim() ? (
-            <TouchableOpacity style={styles.sendBtn} onPress={handleSend}>
-              <Text style={styles.sendIcon}>➤</Text>
-            </TouchableOpacity>
-          ) : (
-            <VoiceRecorder onVoice={handleVoice} />
-          )}
+          <TouchableOpacity style={styles.sendBtn} onPress={handleSend}>
+            <Text style={styles.sendIcon}>➤</Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

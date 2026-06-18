@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, Animated } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import type { PendingMessage } from '../types/message'
-import { formatDur } from '../utils/time'
 
 export function PendingBubble({ message, endTime, totalMs }: {
   message: PendingMessage
@@ -21,19 +20,10 @@ export function PendingBubble({ message, endTime, totalMs }: {
     return () => clearInterval(id)
   }, [endTime, totalMs])
 
-  const isVoice = message.type === 'voice' && message.voiceMessage
-
   return (
     <View style={styles.row}>
       <View style={styles.bubble}>
-        {isVoice ? (
-          <View style={styles.voicePreview}>
-            <Text style={styles.mic}>🎤</Text>
-            <Text style={styles.voiceDur}>{formatDur(message.voiceMessage!.duration)}</Text>
-          </View>
-        ) : (
-          <Text style={styles.text}>{message.text}</Text>
-        )}
+        <Text style={styles.text}>{message.text}</Text>
         <View style={styles.progressBg}>
           <View style={[styles.progressFill, { width: `${pct * 100}%` }]} />
         </View>
@@ -53,7 +43,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(29,78,216,0.35)',
     borderWidth: 1.5,
     borderColor: 'rgba(74,222,128,0.45)',
-    borderStyle: 'dashed',
     borderRadius: 18,
     borderBottomRightRadius: 4,
     paddingHorizontal: 12,
@@ -66,18 +55,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(236,236,236,0.65)',
     lineHeight: 20,
-  },
-  voicePreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  mic: {
-    fontSize: 16,
-  },
-  voiceDur: {
-    fontSize: 13,
-    color: 'rgba(236,236,236,0.65)',
   },
   progressBg: {
     position: 'absolute',
