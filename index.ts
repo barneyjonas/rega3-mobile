@@ -1,8 +1,10 @@
 import { registerRootComponent } from 'expo';
-
 import App from './App';
 
-// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (e) => {
+    document.body.innerHTML = `<div style="color:red;padding:20px;font-family:monospace;white-space:pre-wrap;background:#000;min-height:100vh">${e.message}\n\n${e.error?.stack ?? ''}</div>`;
+  });
+}
+
 registerRootComponent(App);
