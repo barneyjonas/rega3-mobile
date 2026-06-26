@@ -1,23 +1,8 @@
-const BASE_URL = 'https://rega3-server-production.up.railway.app'
-const WS_URL = BASE_URL.replace('https://', 'wss://')
+import { MOCK_CONVERSATIONS, MOCK_MESSAGES } from './data/mockData'
 
-// ── REST ──────────────────────────────────────────────────────────────────────
+const MOCK_ME_ID = 'mock-me'
 
-async function post<T>(path: string, body: object): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  if (!res.ok) throw new Error(`POST ${path} failed: ${res.status}`)
-  return res.json()
-}
-
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`)
-  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`)
-  return res.json()
-}
+// ── Types (unchanged interface so all existing imports keep working) ──────────
 
 export interface ApiUser {
   id: string
@@ -46,88 +31,77 @@ export interface ApiConversationWithMembers {
   last_message: ApiMessage | null
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function toApiMessages(convId: string): ApiMessage[] {
+  return (MOCK_MESSAGES[convId] ?? []).map((m) => ({
+    id: m.id,
+    conversation_id: m.conversation_id,
+    sender_id: m.sender === 'me' ? MOCK_ME_ID : convId + '-contact',
+    text: m.text,
+    timestamp: m.timestamp,
+    status: m.status,
+  }))
+}
+
+function toApiConversations(): ApiConversationWithMembers[] {
+  return MOCK_CONVERSATIONS.map((conv) => {
+    const msgs = toApiMessages(conv.id)
+    const last = msgs[msgs.length - 1] ?? null
+    return {
+      id: conv.id,
+      members: [
+        { id: MOCK_ME_ID, username: 'me', display_name: 'Me', created_at: 0 },
+        { id: conv.id + '-contact', username: conv.contact_name, display_name: conv.contact_name, created_at: 0 },
+      ],
+      last_message: last,
+    }
+  })
+}
+
+// ── Mock API ──────────────────────────────────────────────────────────────────
+
 export const api = {
   register(username: string, display_name: string) {
-    return post<{ user: ApiUser }>('/auth/register', { username, display_name })
+    return Promise.resolve({
+      user: { id: MOCK_ME_ID, username, display_name, created_at: Date.now() } as ApiUser,
+    })
   },
 
   getUsers() {
-    return get<{ users: ApiUser[] }>('/users')
+    const users: ApiUser[] = MOCK_CONVERSATIONS.map((conv) => ({
+      id: conv.id + '-contact',
+      username: conv.contact_name,
+      display_name: conv.contact_name,
+      created_at: 0,
+    }))
+    return Promise.resolve({ users })
   },
 
-  getOrCreateDirect(user_a: string, user_b: string) {
-    return post<{ conversation: ApiConversation }>('/conversations/direct', { user_a, user_b })
+  getOrCreateDirect(_user_a: string, _user_b: string) {
+    return Promise.resolve({
+      conversation: { id: `direct-${Date.now()}`, created_at: Date.now() } as ApiConversation,
+    })
   },
 
-  getConversations(userId: string) {
-    return get<{ conversations: ApiConversationWithMembers[] }>(`/users/${userId}/conversations`)
+  getConversations(_userId: string) {
+    return Promise.resolve({ conversations: toApiConversations() })
   },
 
-  getMessages(convId: string, limit = 50) {
-    return get<{ messages: ApiMessage[] }>(`/conversations/${convId}/messages?limit=${limit}`)
+  getMessages(convId: string, _limit = 50) {
+    return Promise.resolve({ messages: toApiMessages(convId) })
   },
 }
 
-// ── WebSocket ─────────────────────────────────────────────────────────────────
+// ── No-op realtime (replaces WebSocket) ──────────────────────────────────────
 
 type WsListener = (msg: Record<string, unknown>) => void
 
-class RealtimeClient {
-  private ws: WebSocket | null = null
-  private userId: string | null = null
-  private listeners = new Set<WsListener>()
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
-  private reconnectAttempt = 0
-
-  connect(userId: string) {
-    this.userId = userId
-    this.reconnectAttempt = 0
-    this._open()
-  }
-
-  private _open() {
-    if (this.ws) {
-      this.ws.onclose = null
-      this.ws.close()
-    }
-    this.ws = new WebSocket(WS_URL)
-
-    this.ws.onopen = () => {
-      this.reconnectAttempt = 0
-      this.ws!.send(JSON.stringify({ type: 'identify', userId: this.userId }))
-    }
-
-    this.ws.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data) as Record<string, unknown>
-        this.listeners.forEach((fn) => fn(msg))
-      } catch {}
-    }
-
-    this.ws.onclose = () => {
-      const delay = Math.min(30000, 1000 * Math.pow(2, this.reconnectAttempt))
-      this.reconnectAttempt++
-      if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
-      this.reconnectTimer = setTimeout(() => this._open(), delay)
-    }
-  }
-
-  send(data: object) {
-    if (this.ws?.readyState === 1) {
-      this.ws.send(JSON.stringify(data))
-    }
-  }
-
-  on(fn: WsListener) {
-    this.listeners.add(fn)
-    return () => this.listeners.delete(fn)
-  }
-
-  disconnect() {
-    if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
-    if (this.ws) { this.ws.onclose = null; this.ws.close(); this.ws = null }
-    this.userId = null
-  }
+class MockRealtimeClient {
+  connect(_userId: string) {}
+  send(_data: object) {}
+  on(_fn: WsListener) { return () => {} }
+  disconnect() {}
 }
 
-export const realtime = new RealtimeClient()
+export const realtime = new MockRealtimeClient()
