@@ -2,7 +2,7 @@ name: Deploy PWA to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   workflow_dispatch:
 
 permissions:
@@ -37,6 +37,7 @@ jobs:
         run: |
           rm -rf docs
           cp -r dist docs
+          touch docs/.nojekyll
 
       - name: Commit and push docs
         run: |
